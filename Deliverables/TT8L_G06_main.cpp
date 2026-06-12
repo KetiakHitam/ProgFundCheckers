@@ -1,0 +1,157 @@
+// *********************************************************
+// Program: TT8L_G06_main.cpp
+// Course: CCP6114 Programming Fundamentals
+// Lecture Class: TC3L
+// Tutorial Class: TT8L
+// Trimester: 2610
+// Member Information:
+// STUDENT ID | NAME | EMAIL | PHONE
+// STUDENT ID | NAME | EMAIL | PHONE
+// STUDENT ID | NAME | EMAIL | PHONE
+// STUDENT ID | NAME | EMAIL | PHONE
+// *********************************************************
+
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+// Board size constraints
+const int MIN_SIZE = 6;
+const int MAX_SIZE = 10;
+
+// Function prototypes
+int getBoardSize();
+char** createBoard(int size);
+void initBoard(char** board, int size);
+void displayBoard(char** board, int size);
+void deleteBoard(char** board, int size);
+
+int main()
+{
+    cout << "=== CHECKERS BOARD DISPLAY ===" << endl;
+    cout << endl;
+
+    int size = getBoardSize();
+    cout << endl;
+
+    // Allocate, initialize, and display the board
+    char** board = createBoard(size);
+    initBoard(board, size);
+    displayBoard(board, size);
+
+    // Clean up dynamically allocated memory
+    deleteBoard(board, size);
+
+    // Pause before exiting
+    cout << endl << "Press Enter to exit...";
+    cin.ignore(1000, '\n');
+    cin.get();
+
+    return 0;
+}
+
+// Prompts player for board size and validates input is within range.
+int getBoardSize()
+{
+    int size;
+    cout << "Enter board size (" << MIN_SIZE << "-" << MAX_SIZE << "): ";
+    cin >> size;
+
+    // Reject invalid input and re-prompt
+    while (cin.fail() || size < MIN_SIZE || size > MAX_SIZE)
+    {
+        if (cin.eof()) break;
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cout << "Invalid input. Enter a value between "
+             << MIN_SIZE << " and " << MAX_SIZE << ": ";
+        cin >> size;
+    }
+
+    return size;
+}
+
+// Dynamically allocates a 2D char array using pointers.
+char** createBoard(int size)
+{
+    char** board = new char*[size];
+    for (int i = 0; i < size; i++)
+    {
+        board[i] = new char[size];
+    }
+    return board;
+}
+
+// Places pieces on the board. X = Player 1 (top), O = Player 2 (bottom).
+// Pieces only go on dark squares where (row + col) is odd.
+void initBoard(char** board, int size)
+{
+    // Each player occupies (size/2 - 1) rows of pieces
+    int pieceRows = (size / 2) - 1;
+
+    for (int row = 0; row < size; row++)
+    {
+        for (int col = 0; col < size; col++)
+        {
+            if ((row + col) % 2 == 1) // Dark square (playable)
+            {
+                if (row < pieceRows)
+                    board[row][col] = 'X';
+                else if (row >= size - pieceRows)
+                    board[row][col] = 'O';
+                else
+                    board[row][col] = '.'; // Empty playable square
+            }
+            else
+            {
+                board[row][col] = ' '; // Light square (non-playable)
+            }
+        }
+    }
+}
+
+// Renders the board with column letters, row numbers, and grid lines.
+void displayBoard(char** board, int size)
+{
+    // Column headers
+    cout << "   ";
+    for (int col = 0; col < size; col++)
+    {
+        cout << "  " << static_cast<char>('A' + col) << " ";
+    }
+    cout << endl;
+
+    // Rows with borders
+    for (int row = 0; row < size; row++)
+    {
+        // Horizontal separator
+        cout << "   ";
+        for (int col = 0; col < size; col++)
+            cout << "+---";
+        cout << "+" << endl;
+
+        // Row number and cell contents
+        cout << setw(2) << (row + 1) << " ";
+        for (int col = 0; col < size; col++)
+        {
+            cout << "| " << board[row][col] << " ";
+        }
+        cout << "|" << endl;
+    }
+
+    // Bottom border
+    cout << "   ";
+    for (int col = 0; col < size; col++)
+        cout << "+---";
+    cout << "+" << endl;
+}
+
+// Frees all dynamically allocated memory for the board.
+void deleteBoard(char** board, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        delete[] board[i];
+    }
+    delete[] board;
+}

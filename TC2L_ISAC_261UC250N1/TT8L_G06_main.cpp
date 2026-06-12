@@ -1,14 +1,14 @@
 // *********************************************************
 // Program: TT8L_G06_main.cpp
 // Course: CCP6114 Programming Fundamentals
-// Lecture Class: TC3L
+// Lecture Class: TC2L
 // Tutorial Class: TT8L
 // Trimester: 2610
 // Member Information:
-// STUDENT ID | NAME | EMAIL | PHONE
-// STUDENT ID | NAME | EMAIL | PHONE
-// STUDENT ID | NAME | EMAIL | PHONE
-// STUDENT ID | NAME | EMAIL | PHONE
+// 261UC250N1 | ISAC BIN MEGAT AZLAN | ISAC.MEGAT.AZLAN1@student.mmu.edu.my | 0198333630
+// 261UC250KC | Lim Lun Sheng | lim.lun.sheng1@student.mmu.edu.my | 0138340747
+// 261UC250N5 | Lum Jun Keat | LUM.JUN.KEAT1@student.mmu.edu.my | 0103593989
+// 261UC250XG | Hor Jin Han | Hor.Jin.Han1@student.mmu.edu.my | 0126836216
 // *********************************************************
 
 #include <iostream>

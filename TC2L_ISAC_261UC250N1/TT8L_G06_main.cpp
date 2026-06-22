@@ -13,6 +13,9 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cctype>
+#include <cstring>
+#include <cstdlib>
 using namespace std;
 
 // Board size constraints
@@ -21,13 +24,21 @@ const int MAX_SIZE = 10;
 
 // Function prototypes
 int getBoardSize();
+int player1Amount = 0;
+int player2Amount = 1;
+int currentTurn = 2;
+
 char** createBoard(int size);
+
 void initBoard(char** board, int size);
 void displayBoard(char** board, int size);
 void deleteBoard(char** board, int size);
+bool validateInput(char input[2], int size, int player, char** board);
+bool validatePiece(int column, int row, int player, char** board);
 
 int main()
 {
+    char pos[2];
     cout << "=== CHECKERS BOARD DISPLAY ===" << endl;
     cout << endl;
 
@@ -39,13 +50,32 @@ int main()
     initBoard(board, size);
     displayBoard(board, size);
 
-    // Clean up dynamically allocated memory
-    deleteBoard(board, size);
+    while (player1Amount > 0 or player2Amount > 0)
+    {
+        if (currentTurn == 1)
+        {
+            currentTurn = 2;
+        }
+        else
+        {
+            currentTurn = 1;
 
-    // Pause before exiting
-    cout << endl << "Press Enter to exit...";
-    cin.ignore(1000, '\n');
-    cin.get();
+        }
+        bool validInput = false;
+        cout << "Player " << currentTurn << ", " << "please select a piece by typing row then column. E.g A1" << endl;
+        cin >> pos;
+        validInput = validateInput(pos, size, currentTurn, board);
+
+        while (validInput == false)
+        {
+            cout << "Invalid input, please select a piece by typing row then column. E.g A1" << endl;
+            cin >> pos;
+            validInput = validateInput(pos, size, currentTurn, board);
+        }
+        cout << "selected piece at "<< pos << endl;
+
+    }
+
 
     return 0;
 }
@@ -70,6 +100,60 @@ int getBoardSize()
 
     return size;
 }
+
+bool validateInput(char input[3], int size, int player, char** board)
+{
+    int colNumber = input[1] - '0'; // Use ASCII to do 0 = 48
+    int rowLetter = input[0] - 'A';
+    if (isalpha(input[0]) and isdigit(input[1]))
+    {
+        if (rowLetter < size and colNumber <= size and colNumber > 0)
+        {
+            cout << board[rowLetter][colNumber] << endl;
+            return true;
+            /*bool finalCheck = validatePiece(colNumber, rowLetter, player, board);
+            return finalCheck;*/
+        }
+    }
+
+    else
+    {
+        return false;
+    }
+
+
+}
+
+bool validatePiece(int column, int row, int player, char** board)
+{
+    if (player == 1)
+    {
+        if (board[row][column] == 'X')
+        {
+            cout << "Selected correct piece" << endl;
+            return true;
+        }
+        else
+        {
+            cout << "Selected wrong piece" << endl;
+            return false;
+        }
+    }
+    else if (player == 2)
+    {
+        if (board[row][column] == 'O')
+        {
+            cout << "Selected correct piece" << endl;
+            return true;
+        }
+        else
+        {
+            cout << "Selected wrong piece" << endl;
+            return false;
+        }
+    }
+}
+
 
 // Dynamically allocates a 2D char array using pointers.
 char** createBoard(int size)
@@ -96,11 +180,19 @@ void initBoard(char** board, int size)
             if ((row + col) % 2 == 1) // Dark square (playable)
             {
                 if (row < pieceRows)
-                    board[row][col] = 'X';
+                {
+                    board[row][col] = 'X'; // X piece
+                    player1Amount++;
+                }
                 else if (row >= size - pieceRows)
-                    board[row][col] = 'O';
+                {
+
+                    board[row][col] = 'O'; // O piece
+                    player2Amount++;
+                }
                 else
                     board[row][col] = '.'; // Empty playable square
+
             }
             else
             {

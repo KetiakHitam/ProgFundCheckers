@@ -18,15 +18,18 @@
 #include <cstdlib>
 using namespace std;
 
+// temp values
+int player1Amount = 0;
+int player2Amount = 1;
+
+
 // Board size constraints
 const int MIN_SIZE = 6;
 const int MAX_SIZE = 10;
 
 // Function prototypes
 int getBoardSize();
-int player1Amount = 0;
-int player2Amount = 1;
-int currentTurn = 2;
+
 
 char** createBoard(int size);
 
@@ -38,10 +41,11 @@ bool validatePiece(int column, int row, int player, char** board);
 
 int main()
 {
-    char pos[2];
+    char pos[3];
     cout << "=== CHECKERS BOARD DISPLAY ===" << endl;
     cout << endl;
 
+    int currentTurn = 2;
     int size = getBoardSize();
     cout << endl;
 
@@ -103,23 +107,19 @@ int getBoardSize()
 
 bool validateInput(char input[3], int size, int player, char** board)
 {
-    int colNumber = input[1] - '0'; // Use ASCII to do 0 = 48
+    int colNumber = input[1] - '0' - 1; // Use ASCII to do 0 = 48
     int rowLetter = input[0] - 'A';
     if (isalpha(input[0]) and isdigit(input[1]))
     {
-        if (rowLetter < size and colNumber <= size and colNumber > 0)
+        if (rowLetter < size and rowLetter >= 0 and colNumber < size and colNumber >= 0)
         {
-            cout << board[rowLetter][colNumber] << endl;
-            return true;
-            /*bool finalCheck = validatePiece(colNumber, rowLetter, player, board);
-            return finalCheck;*/
+            cout << endl;
+            return validatePiece(colNumber, rowLetter, player, board);
         }
     }
 
-    else
-    {
-        return false;
-    }
+
+    return false;
 
 
 }
@@ -130,28 +130,27 @@ bool validatePiece(int column, int row, int player, char** board)
     {
         if (board[row][column] == 'X')
         {
-            cout << "Selected correct piece" << endl;
+            cout << "Piece X " << "selected at " << row << " " << column << endl << endl;
             return true;
         }
         else
         {
-            cout << "Selected wrong piece" << endl;
-            return false;
+            cout << "Piece X is not in " << row << " " << column << endl << endl;
         }
     }
     else if (player == 2)
     {
         if (board[row][column] == 'O')
         {
-            cout << "Selected correct piece" << endl;
+            cout << "Piece O " << "selected at " << row << " " << column << endl << endl;
             return true;
         }
         else
         {
-            cout << "Selected wrong piece" << endl;
-            return false;
+            cout << "Piece O is not in " << row << " " << column << endl << endl;
         }
     }
+    return false;
 }
 
 

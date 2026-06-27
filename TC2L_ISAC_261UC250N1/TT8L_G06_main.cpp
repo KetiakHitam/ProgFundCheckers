@@ -16,6 +16,8 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <fstream>
+#include <string>
 using namespace std;
 
 int player1Amount = 0;
@@ -33,6 +35,9 @@ bool validateInput(char input[3], int size, int player, char** board);
 bool validatePiece(int column, int row, int player, char** board);
 
 void checkAndAssignPower(char** board, int row, int col, int player, int size);
+void saveGame(char** board, int size, int currentTurn);
+char** loadGame(int& size, int& currentTurn, bool& continueChosen);
+bool winningCondition(char** board, int size);
 
 int main()
 {
@@ -41,14 +46,36 @@ int main()
     cout << endl;
 
     int currentTurn = 2;
-    int size = getBoardSize();
-    cout << endl;
+    int size = 0;
 
-    char** board = createBoard(size);
-    initBoard(board, size);
+    // Startup menu: CONTINUE restores the saved game, anything else starts new.
+    // loadGame returns the restored board on CONTINUE, or nullptr otherwise.
+    bool continueChosen = false;
+    char** board = loadGame(size, currentTurn, continueChosen);
+
+    if (continueChosen)
+    {
+        // The loop toggles currentTurn at the top before the move, so invert the
+        // loaded value to restore the saved player's turn on resume.
+        if (currentTurn == 1)
+            currentTurn = 2;
+        else
+            currentTurn = 1;
+    }
+    else
+    {
+        // New game: ask for board size, then build and fill the board.
+        size = getBoardSize();
+        board = createBoard(size);
+        initBoard(board, size);
+        currentTurn = 2; // toggle makes Player 1 move first
+    }
+
+    cout << endl;
     displayBoard(board, size);
 
-    while (player1Amount > 0 or player2Amount > 0)
+    // Loop until one side has no pieces left (winningCondition scans the board).
+    while (!winningCondition(board, size))
     {
         if (currentTurn == 1)
         {
@@ -271,4 +298,129 @@ void deleteBoard(char** board, int size)
         delete[] board[i];
     }
     delete[] board;
+}
+
+// Saves the current game state to savegame.txt as plain text.
+// Format: line 1 = size, line 2 = currentTurn, then size lines of the board grid.
+// Powered pieces are stored as their own chars (P/J/N, p/j/n), so writing the
+// grid also saves every power.
+void saveGame(char** board, int size, int currentTurn)
+{
+    ofstream outFile;
+    outFile.open("savegame.txt");
+
+    // Open check. If the file could not be opened, keep playing.
+    if (!outFile)
+    {
+        cout << "Could not save game." << endl;
+        return;
+    }
+
+    // Header: board size and whose turn it is.
+    outFile << size << endl;
+    outFile << currentTurn << endl;
+
+    // Board grid, one row per line.
+    for (int row = 0; row < size; row++)
+    {
+        for (int col = 0; col < size; col++)
+            outFile << board[row][col];
+        outFile << endl;
+    }
+
+    outFile.close();
+
+    // Post-save choice: quit or continue.
+    cout << "Game saved. Type Q to quit or any other key to continue: ";
+    char option;
+    cin >> option;
+
+    // Quit: free the board, then end the program. exit() is from <cstdlib>.
+    if (option == 'Q' || option == 'q')
+    {
+        deleteBoard(board, size);
+        exit(0);
+    }
+}
+
+// Asks CONTINUE vs NEW GAME, then restores the state saved by saveGame.
+// On NEW GAME, missing file, or corrupt data: returns nullptr so the caller
+// runs the normal new-game setup. On success: allocates the board, fills size
+// and currentTurn through the reference parameters, sets continueChosen = true,
+// and returns the board pointer.
+char** loadGame(int& size, int& currentTurn, bool& continueChosen)
+{
+    continueChosen = false;
+
+    // "NEW GAME" only needs its first token; anything not CONTINUE = new game.
+    cout << "Type CONTINUE to resume or NEW GAME to start over: ";
+    string choice;
+    cin >> choice;
+
+    if (choice != "CONTINUE")
+        return nullptr;
+
+    ifstream inFile;
+    inFile.open("savegame.txt");
+
+    // Open check: no save file present.
+    if (!inFile)
+    {
+        cout << "No save found or save corrupted. Starting new game." << endl;
+        return nullptr;
+    }
+
+    // Read header.
+    inFile >> size;
+    inFile >> currentTurn;
+
+    // Reject corrupt or out-of-range data.
+    if (inFile.fail() || size < MIN_SIZE || size > MAX_SIZE)
+    {
+        cout << "No save found or save corrupted. Starting new game." << endl;
+        inFile.close();
+        return nullptr;
+    }
+
+    // Skip the newline left after the last >> so get() starts on row 0.
+    inFile.ignore();
+
+    char** board = createBoard(size);
+
+    // Read the grid one char at a time. get() keeps spaces; >> would skip them.
+    for (int row = 0; row < size; row++)
+    {
+        for (int col = 0; col < size; col++)
+            inFile.get(board[row][col]);
+        inFile.ignore(); // skip the end-of-line newline
+    }
+
+    inFile.close();
+    continueChosen = true;
+    return board;
+}
+
+// Scans the board and returns true when either side has zero pieces.
+// Counts powered pieces too: P/J/N belong to player 1, p/j/n to player 2.
+bool winningCondition(char** board, int size)
+{
+    int p1Count = 0;
+    int p2Count = 0;
+
+    for (int row = 0; row < size; row++)
+    {
+        for (int col = 0; col < size; col++)
+        {
+            char c = board[row][col];
+            if (c == 'X' || c == 'P' || c == 'J' || c == 'N')
+                p1Count++;
+            else if (c == 'O' || c == 'p' || c == 'j' || c == 'n')
+                p2Count++;
+        }
+    }
+
+    if (p1Count == 0 || p2Count == 0)
+        return true;
+
+    return false;
 }

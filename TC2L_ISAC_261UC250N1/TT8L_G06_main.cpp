@@ -20,7 +20,7 @@ using namespace std;
 
 // temp values
 int player1Amount = 0;
-int player2Amount = 1;
+int player2Amount = 0;
 
 
 // Board size constraints
@@ -36,7 +36,7 @@ char** createBoard(int size);
 void initBoard(char** board, int size);
 void displayBoard(char** board, int size);
 void deleteBoard(char** board, int size);
-bool validateInput(char input[2], int size, int player, char** board);
+bool validateInput(char input[3], int size, int player, char** board);
 bool validatePiece(int column, int row, int player, char** board);
 
 int main()
@@ -107,14 +107,14 @@ int getBoardSize()
 
 bool validateInput(char input[3], int size, int player, char** board)
 {
-    int colNumber = input[1] - '0' - 1; // Use ASCII to do 0 = 48
-    int rowLetter = input[0] - 'A';
+    int colLetter = input[0] - 'A'; // Use ASCII to do 0 = 48
+    int rowNumber = input[1] - '0' - 1;
     if (isalpha(input[0]) and isdigit(input[1]))
     {
-        if (rowLetter < size and rowLetter >= 0 and colNumber < size and colNumber >= 0)
+        if (rowNumber < size and rowNumber >= 0 and colLetter < size and colLetter >= 0)
         {
             cout << endl;
-            return validatePiece(colNumber, rowLetter, player, board);
+            return validatePiece(colLetter, rowNumber, player, board);
         }
     }
 
@@ -182,12 +182,14 @@ void initBoard(char** board, int size)
                 {
                     board[row][col] = 'X'; // X piece
                     player1Amount++;
+
                 }
                 else if (row >= size - pieceRows)
                 {
 
                     board[row][col] = 'O'; // O piece
                     player2Amount++;
+
                 }
                 else
                     board[row][col] = '.'; // Empty playable square

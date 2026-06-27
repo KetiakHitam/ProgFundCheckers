@@ -20,9 +20,6 @@
 #include <string>
 using namespace std;
 
-int player1Amount = 0;
-int player2Amount = 0;
-
 const int MIN_SIZE = 6;
 const int MAX_SIZE = 10;
 
@@ -240,18 +237,14 @@ void initBoard(char** board, int size)
             {
                 if (row < pieceRows)
                 {
-                    board[row][col] = 'X'; 
-                    player1Amount++;
-
+                    board[row][col] = 'X';
                 }
                 else if (row >= size - pieceRows)
                 {
-                    board[row][col] = 'O'; 
-                    player2Amount++;
-
+                    board[row][col] = 'O';
                 }
                 else
-                    board[row][col] = '.'; 
+                    board[row][col] = '.';
             }
             else
             {

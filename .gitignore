@@ -1,0 +1,16 @@
+# Ignore course materials and approved library
+SourceCodes/
+Toolbox/
+
+# Ignore internal dev/testing folder (has verbose toolbox citations)
+CodeBlocks/
+
+# Ignore IDE settings
+.vscode/
+.idea/
+
+# Ignore build artifacts and executables
+*.exe
+*.o
+*.obj
+*.out

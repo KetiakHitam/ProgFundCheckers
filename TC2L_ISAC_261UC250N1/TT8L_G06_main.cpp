@@ -349,6 +349,7 @@ char** loadGame(int& size, int& currentTurn, bool& continueChosen)
     cout << "Type CONTINUE to resume or NEW GAME to start over: ";
     string choice;
     cin >> choice;
+    cin.ignore(1000, '\n'); // discard the rest of the line, e.g. the "GAME" in "NEW GAME"
 
     if (choice != "CONTINUE")
         return nullptr;

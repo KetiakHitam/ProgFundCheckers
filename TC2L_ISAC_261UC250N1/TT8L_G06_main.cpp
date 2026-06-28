@@ -38,6 +38,8 @@ void displayBoard(char** board, int size);
 void deleteBoard(char** board, int size);
 bool validateInput(char input[2], int size, int player, char** board);
 bool validatePiece(int column, int row, int player, char** board);
+void movementchoices(char input[3], int player, char** board);
+void movePiece(char input[3], char movechoices[3], int player, char** board);
 
 int main()
 {
@@ -229,13 +231,17 @@ void movePiece(char input[3], char movechoices[3], int player, char** board)
 {
     cout <<"Please select a position to move to from the available choices." << endl;
     cin >> movementCHOICE;
-    if (movementCHOICE[0] == movechoices[0] && movementCHOICE == movechoices[1])
+    if (movementCHOICE[0] == movechoices[0] && movementCHOICE[1] == movechoices[1])
     {
         cout <<"Moving piece to " << movementCHOICE << endl;
+        board[movementCHOICE[0]][movementCHOICE[1]] = board[input[0]][input[1]];
+        board[input[0]][input[1]] = '.';
     }
-    else if (movementCHOICE[0] == movechoices[0] && movementCHOICE == movechoices[2])
+    else if (movementCHOICE[0] == movechoices[0] && movementCHOICE[1] == movechoices[2])
     {
         cout <<"Moving piece to " << movementCHOICE << endl;
+        board[movementCHOICE[0]][movementCHOICE[1]] = board[input[0]][input[1]];
+        board[input[0]][input[1]] = '.';
     }
     else
     {

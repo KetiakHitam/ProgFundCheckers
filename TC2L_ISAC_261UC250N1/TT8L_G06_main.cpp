@@ -273,14 +273,17 @@ bool movementchoices(char input[3], int player, char** board, int size, int targ
     targetCount = 0;
     int col = input[0] - 'A';
     int row = input[1] - '0' - 1;
+    char targetPiece = 'X';
     // Determines if the piece moves up or down depending on the current player on the turn
     int drow;
     if(player==1){
     drow=1;
+    targetPiece = 'O';
     }
     else
     {
     drow=-1;
+    targetPiece = 'X';
     }
 
     // Calculates targettable position on the left of the piece
@@ -293,19 +296,54 @@ bool movementchoices(char input[3], int player, char** board, int size, int targ
     cout << "You may move this piece to the following positions:" << endl;
 
     // Checks if targettable positions are actually playable '.'
-    if (t1r >= 0 && t1r < size && t1c >= 0 && t1c < size && board[t1r][t1c] == '.') {
-        cout << static_cast<char>('A' + t1c) << (t1r + 1) << endl;
-        targets[targetCount][0] = t1r;
-        targets[targetCount][1] = t1c;
-        targetCount++;
+    if (t1r >= 0 && t1r < size && t1c >= 0 && t1c < size && board[t1r][t1c] == '.' || (board[t1r][t1c] == targetPiece)) {
+        if (board[t1r][t1c] == '.')
+        {
+            cout << static_cast<char>('A' + t1c) << (t1r + 1) << endl;
+            targets[targetCount][0] = t1r;
+            targets[targetCount][1] = t1c;
+            targetCount++;
+        }
+        else if (board[t1r][t1c] == targetPiece) // if its an enemy piece then we should check the next position
+        {
+            cout << "ATTACK THE D POINT (LEFT)" << endl;
+            if (board[t1r + drow][--t1c] == '.') // if theres an empty and movable space to then we allow this position to be used
+            {
+                cout << static_cast<char>('A' - t1c * 2) << (t1r + 2) << endl;
+                targets[targetCount][0] = t1r;
+                targets[targetCount][1] = t1c;
+                targetCount++;
+            }
+
+        }
+
     }
 
+
     if (t2r >= 0 && t2r < size && t2c >= 0 && t2c < size && board[t2r][t2c] == '.') {
-        cout << static_cast<char>('A' + t2c) << (t2r + 1) << endl;
-        targets[targetCount][0] = t2r;
-        targets[targetCount][1] = t2c;
-        targetCount++;
+        if (board[t2r][t2c] == '.')
+        {
+            cout << static_cast<char>('A' + t2c) << (t2r + 1) << endl;
+            targets[targetCount][0] = t2r;
+            targets[targetCount][1] = t2c;
+            targetCount++;
+        }
+        else if (board[t1r][t1c] == targetPiece) // if its an enemy piece then we should check the next position
+        {
+            cout << "ATTACK THE D POINT (RIGHT)" << endl;
+            if (board[t2r + drow][++t2c] == '.') // if theres an empty and movable space to then we allow this position to be used
+            {
+                cout << static_cast<char>('A' - t2c * 2) << (t2r - 2) << endl;
+                targets[targetCount][0] = t2r;
+                targets[targetCount][1] = t2c;
+                targetCount++;
+            }
+
+        }
+
     }
+
+
 
     if (targetCount == 0) {
         cout << "(It seems there are no legal moves with this piece)" << endl;

@@ -39,7 +39,7 @@ void deleteBoard(char** board, int size);
 bool validateInput(char input[2], int size, int player, char** board);
 bool validatePiece(int column, int row, int player, char** board);
 void movementchoices(char input[3], int player, char** board);
-void movePiece(char input[3], char movechoices[3], int player, char** board);
+void movePiece(char input[3], int player, char** board);
 
 int main()
 {
@@ -162,31 +162,31 @@ bool validatePiece(int column, int row, int player, char** board)
 void movementchoices(char input[3], int player, char** board)
 {
     // Handle movement for player 1's pieces (X), top of the board
-    if (player ==1)
+    char movechoices[3];
+    if (player == 1)
     {
-        char movechoices[3];
-        if (input[0] != size -1 || input[1] != 0 || input[1] != size -1)
+        if (input[0] - 'A' != size -1 || input[1] - '0' != 0 || input[1] - '0' != size -1)
         {   
             cout <<"You may move this piece to the following positions: " << endl;
             cout << input[0] + 1 << input[1] - 1 << endl;
             cout << input[0] + 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] + 1;
-            movechoices[1] = input[1] - 1;
-            movechoices[2] = input[1] + 1;
+            movechoices[0] = input[0] - 'A' + 1;
+            movechoices[1] = input[1] - '0' - 1;
+            movechoices[2] = input[1] - '0' + 1;
         }
-        else if (input[0] != 0 || input[1] != size -1)
+        else if (input[0] - 'A' != 0 || input[1] - '0' != size -1)
         {
             cout <<"You may move this piece to the following positions: " << endl;
             cout << input[0] + 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] + 1;
-            movechoices[1] = input[1] + 1;
+            movechoices[0] = input[0] - 'A' + 1;
+            movechoices[1] = input[1] - '0' + 1;
         }
-        else if (input[0] != 0 || input[1] != 0)
+        else if (input[0] - 'A' != 0 || input[1] - '0' != 0)
         {
             cout <<"You may move this piece to the following positions: " << endl;
             cout << input[0] + 1 << input[1] - 1 << endl;
-            movechoices[0] = input[0] + 1;
-            movechoices[1] = input[1] - 1;
+            movechoices[0] = input[0] - 'A' + 1;
+            movechoices[1] = input[1] - '0' - 1;
         }
         else
         {
@@ -194,40 +194,41 @@ void movementchoices(char input[3], int player, char** board)
         }
     }
     // Handle movement for player 2's pieces (O), bottom of the board
-    else if (player == 2)
+    else
     {   
-        if (input[0] != 0 || input[1] != 0 || input[1] != size -1)
+        if (input[0] - 'A' != 0 || input[1] - '0' != 0 || input[1] - '0' != size -1)
         {
             cout <<"You may move this piece to the following positions: " << endl;
             cout << input[0] - 1 << input[1] - 1 << endl;
             cout << input[0] - 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] - 1;
-            movechoices[1] = input[1] - 1;
-            movechoices[2] = input[1] + 1;
+            movechoices[0] = input[0] - 'A' - 1;
+            movechoices[1] = input[1] - '0' - 1;
+            movechoices[2] = input[1] - '0' + 1;
         }
-        else if (input[0] != 0 || input[1] != size -1)
+        else if (input[0] - 'A' != 0 || input[1] - '0' != size -1)
         {
             cout <<"You may move this piece to the following positions: " << endl;
             cout << input[0] - 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] - 1;
-            movechoices[1] = input[1] + 1;
+            movechoices[0] = input[0] - 'A' - 1;
+            movechoices[1] = input[1] - '0' + 1;
         }
-        else if (input[0] != 0 || input[1] != 0)
+        else if (input[0] - 'A' != 0 || input[1] - '0' != 0)
         {
             cout <<"You may move this piece to the following positions: " << endl;
             cout << input[0] - 1 << input[1] - 1 << endl;
-            movechoices[0] = input[0] - 1;
-            movechoices[1] = input[1] - 1;
+            movechoices[0] = input[0] - 'A' - 1;
+            movechoices[1] = input[1] - '0' - 1;
         }
         else
         {
             cout <<"This piece is at the edge of the board and cannot move." << endl;
         }
     }
+    return movePiece(input, movechoices, player, board);
 }
 
 // Function to handle actual movement of a piece
-void movePiece(char input[3], char movechoices[3], int player, char** board)
+void movePiece(char input[3], char movementCHOICE[3], int player, char** board)
 {
     cout <<"Please select a position to move to from the available choices." << endl;
     cin >> movementCHOICE;

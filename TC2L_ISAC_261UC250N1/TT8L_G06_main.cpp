@@ -82,6 +82,7 @@ int main()
         int targets[2][2];
         int targetCount = 0;
         bool hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+        // If the selected piece has no valid moves, allow the player to choose another piece until a pice with valid moves is selected
         if (!hasMove) {
             cout << "Player " << currentTurn << ", " << "please select a piece by typing row then column. E.g A1" << endl;
             cin >> pos;
@@ -103,10 +104,12 @@ int main()
             char choice[3];
             cin >> choice;
 
+            // Temporarily stores the targetted position's row and column
             int tcol = choice[0] - 'A';
             int trow = choice[1] - '0' - 1;
             int chosenRow = -1;
             int chosenCol = -1;
+            // Checks the array targets if the targetted position matches the row and column stored
             for (int i = 0; i < targetCount; ++i) {
                 if (targets[i][0] == trow && targets[i][1] == tcol) {
                     chosenRow = trow;
@@ -114,19 +117,19 @@ int main()
                     break;
                 }
             }
-
+            // If the chosen position matches with targets available, moves the pieces and restarts the loop after displaying board
             if (chosenRow != -1) {
                 movePiece(pos, chosenRow, chosenCol, currentTurn, board);
                 displayBoard(board, size);
                 hasMove = false; // Exit the loop after a successful move
             } 
+            // If the chosen position does not match with targets available, and lets the player to choose again
             else {
                 cout << "Invalid choice or square not available." << endl;
             }
         }
 
     }
-
 
     return 0;
 }

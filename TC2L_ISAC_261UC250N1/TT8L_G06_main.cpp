@@ -35,8 +35,9 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size);
 void saveGame(char** board, int size, int currentTurn);
 char** loadGame(int& size, int& currentTurn, bool& continueChosen);
 bool winningCondition(char** board, int size);
-bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount);
-void movePiece(char input[3], int targetRow, int targetCol, int player, char** board);
+bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount, bool capturesOnly = false);
+bool movePiece(char input[3], int targetRow, int targetCol, int player, char** board);
+bool isEnemy(char piece, int player);
 
 int main()
 {
@@ -85,25 +86,37 @@ int main()
             currentTurn = 1;
         }
 
+        // Piece selection. Reading into a string first lets the player type SAVE
+        // (longer than the 2-char coordinate buffer) without overflowing pos.
         bool validInput = false;
-        cout << "Player " << currentTurn << ", please select a piece by typing column then row. E.g A1" << endl;
-        cin >> pos;
-        validInput = validateInput(pos, size, currentTurn, board);
-
-        while (validInput == false)
+        string entry;
+        while (!validInput)
         {
-            cout << "Invalid input, please select a piece by typing column then row. E.g A1" << endl;
-            cin >> pos;
+            cout << "Player " << currentTurn << ", select a piece (e.g. A1) or type SAVE to save: " << endl;
+            cin >> entry;
+
+            // SAVE trigger. saveGame writes the file and, if the player chooses to
+            // quit, exits the program; otherwise it returns and we prompt again.
+            if (entry == "SAVE" || entry == "save")
+            {
+                saveGame(board, size, currentTurn);
+                continue;
+            }
+
+            // A coordinate needs at least a column letter and a row digit.
+            if (entry.length() < 2)
+            {
+                cout << "Invalid input." << endl;
+                continue;
+            }
+
+            pos[0] = entry[0];
+            pos[1] = entry[1];
+            pos[2] = '\0';
             validInput = validateInput(pos, size, currentTurn, board);
         }
         cout << "selected piece at " << pos << endl;
 
-        // Updated to match the new naming convention from your snippet
-        int colLetter = pos[0] - 'A';
-        int rowNumber = pos[1] - '0' - 1;
-
-        // Passed rowNumber first, then colLetter, to match board[row][col] mapping
-        checkAndAssignPower(board, rowNumber, colLetter, currentTurn, size);
         displayBoard(board, size);
         int targets[2][2];
         int targetCount = 0;
@@ -143,22 +156,74 @@ int main()
                     break;
                 }
             }
-            // If the chosen position matches with targets available, moves the pieces and restarts the loop after displaying board
+            // If the chosen position matches an available target, move the piece.
             if (chosenRow != -1) {
-                movePiece(pos, chosenRow, chosenCol, currentTurn, board);
+                // Read the moving piece before the move to detect a Juggernaut.
+                char mover = board[pos[1] - '0' - 1][pos[0] - 'A'];
+                bool isJuggernaut = (mover == 'J' || mover == 'j');
+
+                bool didCapture = movePiece(pos, chosenRow, chosenCol, currentTurn, board);
                 displayBoard(board, size);
-                hasMove = false; // Exit the loop after a successful move
+
+                // Track the piece at its new square for chain capture or promotion.
+                pos[0] = static_cast<char>('A' + chosenCol);
+                pos[1] = static_cast<char>('1' + chosenRow);
+                pos[2] = '\0';
+
+                // Juggernaut: after a kill it may keep capturing (chain kill).
+                if (isJuggernaut && didCapture)
+                {
+                    hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount, true);
+                    if (hasMove)
+                        cout << "Juggernaut chain kill, pick the next capture." << endl;
+                }
+                else
+                {
+                    hasMove = false;
+                }
+
+                // Turn over: offer promotion on the final landing square.
+                if (!hasMove)
+                {
+                    checkAndAssignPower(board, chosenRow, chosenCol, currentTurn, size);
+                    displayBoard(board, size);
+                }
             }
-            // If the chosen position does not match with targets available, and lets the player to choose again
+            // Otherwise the target was not a listed option; let the player retry.
             else {
                 cout << "Invalid choice or square not available." << endl;
             }
         }
     }
 
-        deleteBoard(board, size);
-
+    // Loop ended: one side has no pieces left. Announce the winner by counting
+    // what remains. The side with pieces still on the board wins.
+    int p1Left = 0;
+    int p2Left = 0;
+    for (int row = 0; row < size; row++)
+    {
+        for (int col = 0; col < size; col++)
+        {
+            char c = board[row][col];
+            if (c == 'X' || c == 'P' || c == 'J' || c == 'N')
+                p1Left++;
+            else if (c == 'O' || c == 'p' || c == 'j' || c == 'n')
+                p2Left++;
+        }
     }
+
+    cout << endl;
+    if (p1Left == 0 && p2Left == 0)
+        cout << "Game over. It is a draw." << endl;
+    else if (p2Left == 0)
+        cout << "Game over. Player 1 wins!" << endl;
+    else
+        cout << "Game over. Player 2 wins!" << endl;
+
+    deleteBoard(board, size);
+
+    return 0;
+}
 
 
 int getBoardSize()
@@ -268,7 +333,7 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size)
 }
 
 // Function to handle movement choices for pieces
-bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount)
+bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount, bool capturesOnly)
 {
     targetCount = 0;
     int col = input[0] - 'A';
@@ -283,51 +348,130 @@ bool movementchoices(char input[3], int player, char** board, int size, int targ
     drow=-1;
     }
 
-    // Calculates targettable position on the left of the piece
-    int t1r = row + drow;
-    int t1c = col - 1;
-    // Calculates targettable position on the right of the piece
-    int t2r = row + drow;
-    int t2c = col + 1;
+    // Phantom moves through its own team's pieces (phases over friendlies).
+    char piece = board[row][col];
+    bool isPhantom = (piece == 'P' || piece == 'p');
 
-    cout << "You may move this piece to the following positions:" << endl;
+    // Diagonal column directions: left then right.
+    int dcols[2] = { -1, 1 };
 
-    // Checks if targettable positions are actually playable '.'
-    if (t1r >= 0 && t1r < size && t1c >= 0 && t1c < size && board[t1r][t1c] == '.') {
-        cout << static_cast<char>('A' + t1c) << (t1r + 1) << endl;
-        targets[targetCount][0] = t1r;
-        targets[targetCount][1] = t1c;
-        targetCount++;
+    if (!capturesOnly)
+        cout << "You may move this piece to the following positions:" << endl;
+
+    // Each forward diagonal yields at most one target: a step onto the first
+    // empty square (Phantom phases over friendlies to reach it), or a capture
+    // over an enemy onto the empty square beyond it.
+    for (int i = 0; i < 2; i++)
+    {
+        int dc = dcols[i];
+        int k = 1;
+
+        // Phantom skips past consecutive friendly pieces along the diagonal.
+        if (isPhantom)
+        {
+            while (true)
+            {
+                int rr = row + k * drow;
+                int cc = col + k * dc;
+                if (rr < 0 || rr >= size || cc < 0 || cc >= size)
+                    break;
+                char here = board[rr][cc];
+                if (here == '.' || isEnemy(here, player))
+                    break; // empty square to land on, or an enemy to capture
+                k++;       // friendly piece: phase through it
+            }
+        }
+
+        int stepR = row + k * drow;
+        int stepC = col + k * dc;
+        if (stepR < 0 || stepR >= size || stepC < 0 || stepC >= size)
+            continue;
+
+        char dest = board[stepR][stepC];
+        if (dest == '.')
+        {
+            // Plain step (suppressed during a chain capture).
+            if (!capturesOnly)
+            {
+                cout << static_cast<char>('A' + stepC) << (stepR + 1) << endl;
+                targets[targetCount][0] = stepR;
+                targets[targetCount][1] = stepC;
+                targetCount++;
+            }
+        }
+        else if (isEnemy(dest, player))
+        {
+            // Capture: land on the empty square just beyond the enemy.
+            int jumpR = stepR + drow;
+            int jumpC = stepC + dc;
+            if (jumpR >= 0 && jumpR < size && jumpC >= 0 && jumpC < size && board[jumpR][jumpC] == '.')
+            {
+                cout << static_cast<char>('A' + jumpC) << (jumpR + 1) << " (capture)" << endl;
+                targets[targetCount][0] = jumpR;
+                targets[targetCount][1] = jumpC;
+                targetCount++;
+            }
+        }
     }
 
-    if (t2r >= 0 && t2r < size && t2c >= 0 && t2c < size && board[t2r][t2c] == '.') {
-        cout << static_cast<char>('A' + t2c) << (t2r + 1) << endl;
-        targets[targetCount][0] = t2r;
-        targets[targetCount][1] = t2c;
-        targetCount++;
-    }
-
-    if (targetCount == 0) {
+    if (targetCount == 0 && !capturesOnly) {
         cout << "(It seems there are no legal moves with this piece)" << endl;
     }
 
     return targetCount > 0;
 }
 
-// Function to handle actual movement of a piece
-void movePiece(char input[3], int targetRow, int targetCol, int player, char** board)
+// Moves a piece to the target square. Returns true if the move captured an enemy.
+// The captured enemy (if any) is the square one diagonal step before the landing
+// square; this holds for normal jumps and for Phantom jumps over friendlies.
+bool movePiece(char input[3], int targetRow, int targetCol, int player, char** board)
 {
     int fromCol = input[0] - 'A';
     int fromRow = input[1] - '0' - 1;
 
     if (targetRow < 0 || targetCol < 0) {
         cout << "No move chosen." << endl;
-        return;
+        return false;
     }
 
-    board[targetRow][targetCol] = board[fromRow][fromCol];
+    char mover = board[fromRow][fromCol];
+    bool captured = false;
+
+    // Unit diagonal step from the source toward the landing square.
+    int dr = (targetRow > fromRow) ? 1 : -1;
+    int dc = (targetCol > fromCol) ? 1 : -1;
+    int capRow = targetRow - dr;
+    int capCol = targetCol - dc;
+
+    if (capRow >= 0 && capCol >= 0 && isEnemy(board[capRow][capCol], player))
+    {
+        captured = true;
+        if (mover == 'N' || mover == 'n')
+        {
+            // Necromancer: the captured square becomes a new normal piece of your colour.
+            board[capRow][capCol] = (player == 1) ? 'X' : 'O';
+            cout << "Necromancer raised a piece at " << static_cast<char>('A' + capCol) << (capRow + 1) << endl;
+        }
+        else
+        {
+            board[capRow][capCol] = '.';
+            cout << "Captured piece at " << static_cast<char>('A' + capCol) << (capRow + 1) << endl;
+        }
+    }
+
+    board[targetRow][targetCol] = mover;
     board[fromRow][fromCol] = '.';
     cout << "Moved piece to " << static_cast<char>('A' + targetCol) << (targetRow + 1) << endl;
+    return captured;
+}
+
+// Returns true if the given piece char belongs to the opponent of player.
+bool isEnemy(char piece, int player)
+{
+    if (player == 1)
+        return (piece == 'O' || piece == 'p' || piece == 'j' || piece == 'n');
+    else
+        return (piece == 'X' || piece == 'P' || piece == 'J' || piece == 'N');
 }
 
 // Dynamically allocates a 2D char array using pointers.
@@ -462,13 +606,16 @@ char** loadGame(int& size, int& currentTurn, bool& continueChosen)
     continueChosen = false;
 
     // "NEW GAME" only needs its first token; anything not CONTINUE = new game.
-    cout << "Type CONTINUE to resume or NEW GAME to start over: ";
+    cout << "===== CHECKERMANIA =====" << endl;
+    cout << "Please type in CONTINUE to continue the game where you left off." << endl;
+    cout << "Please type in NEW GAME to start a new game." << endl;
+    cout << "Your input: ";
     string choice;
     cin >> choice;
     cin.ignore(1000, '\n'); // discard the rest of the line, e.g. the "GAME" in "NEW GAME"
 
     if (choice != "CONTINUE")
-        return nullptr;
+        return NULL;
 
     ifstream inFile;
     inFile.open("savegame.txt");
@@ -477,7 +624,7 @@ char** loadGame(int& size, int& currentTurn, bool& continueChosen)
     if (!inFile)
     {
         cout << "No save found or save corrupted. Starting new game." << endl;
-        return nullptr;
+        return NULL;
     }
 
     // Read header.
@@ -489,7 +636,7 @@ char** loadGame(int& size, int& currentTurn, bool& continueChosen)
     {
         cout << "No save found or save corrupted. Starting new game." << endl;
         inFile.close();
-        return nullptr;
+        return NULL;
     }
 
     // Skip the newline left after the last >> so get() starts on row 0.

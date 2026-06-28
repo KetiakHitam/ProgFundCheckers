@@ -36,10 +36,10 @@ char** createBoard(int size);
 void initBoard(char** board, int size);
 void displayBoard(char** board, int size);
 void deleteBoard(char** board, int size);
-bool validateInput(char input[2], int size, int player, char** board);
+bool validateInput(char input[3], int size, int player, char** board);
 bool validatePiece(int column, int row, int player, char** board);
-void movementchoices(char input[3], int player, char** board);
-void movePiece(char input[3], int player, char** board);
+bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount);
+void movePiece(char input[3], int targetRow, int targetCol, int player, char** board);
 
 int main()
 {
@@ -79,8 +79,36 @@ int main()
             validInput = validateInput(pos, size, currentTurn, board);
         }
         cout << "selected piece at "<< pos << endl;
-        movementchoices(pos, currentTurn, board);
-        movePiece(pos, currentTurn, board);
+        int targets[2][2];
+        int targetCount = 0;
+        bool hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+
+        if (hasMove) {
+            cout << "Please type the target position (e.g. B3): ";
+            char choice[3];
+            cin >> choice;
+
+            int tcol = choice[0] - 'A';
+            int trow = choice[1] - '0' - 1;
+            int chosenRow = -1;
+            int chosenCol = -1;
+            for (int i = 0; i < targetCount; ++i) {
+                if (targets[i][0] == trow && targets[i][1] == tcol) {
+                    chosenRow = trow;
+                    chosenCol = tcol;
+                    break;
+                }
+            }
+
+            if (chosenRow != -1) {
+                movePiece(pos, chosenRow, chosenCol, currentTurn, board);
+                displayBoard(board, size);
+            } else {
+                cout << "Invalid choice or square not available." << endl;
+            }
+        } else {
+            cout << "No available moves for that piece." << endl;
+        }
 
     }
 
@@ -158,96 +186,55 @@ bool validatePiece(int column, int row, int player, char** board)
 }
 
 // Function to handle movement choices for pieces
-// Will fix when I figure everything else out.
-void movementchoices(char input[3], int player, char** board)
+bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount)
 {
-    // Handle movement for player 1's pieces (X), top of the board
-    char movechoices[3];
-    if (player == 1)
-    {
-        if (input[0] - 'A' != size -1 || input[1] - '0' != 0 || input[1] - '0' != size -1)
-        {   
-            cout <<"You may move this piece to the following positions: " << endl;
-            cout << input[0] + 1 << input[1] - 1 << endl;
-            cout << input[0] + 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] - 'A' + 1;
-            movechoices[1] = input[1] - '0' - 1;
-            movechoices[2] = input[1] - '0' + 1;
-        }
-        else if (input[0] - 'A' != 0 || input[1] - '0' != size -1)
-        {
-            cout <<"You may move this piece to the following positions: " << endl;
-            cout << input[0] + 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] - 'A' + 1;
-            movechoices[1] = input[1] - '0' + 1;
-        }
-        else if (input[0] - 'A' != 0 || input[1] - '0' != 0)
-        {
-            cout <<"You may move this piece to the following positions: " << endl;
-            cout << input[0] + 1 << input[1] - 1 << endl;
-            movechoices[0] = input[0] - 'A' + 1;
-            movechoices[1] = input[1] - '0' - 1;
-        }
-        else
-        {
-            cout <<"This piece is at the edge of the board and cannot move." << endl;
-        }
+    targetCount = 0;
+    int col = input[0] - 'A';
+    int row = input[1] - '0' - 1;
+    int drow = (player == 1) ? 1 : -1;
+
+    int t1r = row + drow;
+    int t1c = col - 1;
+    int t2r = row + drow;
+    int t2c = col + 1;
+
+    cout << "You may move this piece to the following positions:" << endl;
+
+    if (t1r >= 0 && t1r < size && t1c >= 0 && t1c < size && board[t1r][t1c] == '.') {
+        cout << static_cast<char>('A' + t1c) << (t1r + 1) << endl;
+        targets[targetCount][0] = t1r;
+        targets[targetCount][1] = t1c;
+        targetCount++;
     }
-    // Handle movement for player 2's pieces (O), bottom of the board
-    else
-    {   
-        if (input[0] - 'A' != 0 || input[1] - '0' != 0 || input[1] - '0' != size -1)
-        {
-            cout <<"You may move this piece to the following positions: " << endl;
-            cout << input[0] - 1 << input[1] - 1 << endl;
-            cout << input[0] - 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] - 'A' - 1;
-            movechoices[1] = input[1] - '0' - 1;
-            movechoices[2] = input[1] - '0' + 1;
-        }
-        else if (input[0] - 'A' != 0 || input[1] - '0' != size -1)
-        {
-            cout <<"You may move this piece to the following positions: " << endl;
-            cout << input[0] - 1 << input[1] + 1 << endl;
-            movechoices[0] = input[0] - 'A' - 1;
-            movechoices[1] = input[1] - '0' + 1;
-        }
-        else if (input[0] - 'A' != 0 || input[1] - '0' != 0)
-        {
-            cout <<"You may move this piece to the following positions: " << endl;
-            cout << input[0] - 1 << input[1] - 1 << endl;
-            movechoices[0] = input[0] - 'A' - 1;
-            movechoices[1] = input[1] - '0' - 1;
-        }
-        else
-        {
-            cout <<"This piece is at the edge of the board and cannot move." << endl;
-        }
+
+    if (t2r >= 0 && t2r < size && t2c >= 0 && t2c < size && board[t2r][t2c] == '.') {
+        cout << static_cast<char>('A' + t2c) << (t2r + 1) << endl;
+        targets[targetCount][0] = t2r;
+        targets[targetCount][1] = t2c;
+        targetCount++;
     }
-    return movePiece(input, movechoices, player, board);
+
+    if (targetCount == 0) {
+        cout << "(no legal simple moves)" << endl;
+    }
+
+    return targetCount > 0;
 }
 
 // Function to handle actual movement of a piece
-void movePiece(char input[3], char movementCHOICE[3], int player, char** board)
+void movePiece(char input[3], int targetRow, int targetCol, int player, char** board)
 {
-    cout <<"Please select a position to move to from the available choices." << endl;
-    cin >> movementCHOICE;
-    if (movementCHOICE[0] == movechoices[0] && movementCHOICE[1] == movechoices[1])
-    {
-        cout <<"Moving piece to " << movementCHOICE << endl;
-        board[movementCHOICE[0]][movementCHOICE[1]] = board[input[0]][input[1]];
-        board[input[0]][input[1]] = '.';
+    int fromCol = input[0] - 'A';
+    int fromRow = input[1] - '0' - 1;
+
+    if (targetRow < 0 || targetCol < 0) {
+        cout << "No move chosen." << endl;
+        return;
     }
-    else if (movementCHOICE[0] == movechoices[0] && movementCHOICE[1] == movechoices[2])
-    {
-        cout <<"Moving piece to " << movementCHOICE << endl;
-        board[movementCHOICE[0]][movementCHOICE[1]] = board[input[0]][input[1]];
-        board[input[0]][input[1]] = '.';
-    }
-    else
-    {
-        cout <<"Invalid move choice. Please select a valid position." << endl;
-    }
+
+    board[targetRow][targetCol] = board[fromRow][fromCol];
+    board[fromRow][fromCol] = '.';
+    cout << "Moved piece to " << static_cast<char>('A' + targetCol) << (targetRow + 1) << endl;
 }
 
 // Dynamically allocates a 2D char array using pointers.

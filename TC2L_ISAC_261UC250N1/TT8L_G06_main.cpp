@@ -39,6 +39,7 @@ bool movementchoices(char input[3], int player, char** board, int size, int targ
 bool movePiece(char input[3], int targetRow, int targetCol, int player, char** board);
 bool isEnemy(char piece, int player);
 
+// Entry point: sets up or restores the game, then runs the turn loop until a win.
 int main()
 {
     char pos[3];
@@ -121,21 +122,22 @@ int main()
         int targets[2][2];
         int targetCount = 0;
         bool hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
-        // If the selected piece has no valid moves, allow the player to choose another piece until a pice with valid moves is selected
+        // If the selected piece has no legal moves, let the player pick another
+        // piece until one with a move is chosen.
         while (!hasMove) {
-            cout << "Player " << currentTurn << ", " << "please select a piece by typing row then column. E.g A1" << endl;
+            cout << "Player " << currentTurn << ", select a piece (e.g. A1): " << endl;
             cin >> pos;
             validInput = validateInput(pos, size, currentTurn, board);
 
             while (validInput == false)
             {
-                cout << "Invalid input, please select a piece by typing row then column. E.g A1" << endl;
+                cout << "Invalid input, select a piece (e.g. A1): " << endl;
                 cin >> pos;
                 validInput = validateInput(pos, size, currentTurn, board);
             }
-            cout << "selected piece at "<< pos << endl;
-                hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
-            }
+            cout << "selected piece at " << pos << endl;
+            hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+        }
 
 
         while (hasMove) {
@@ -222,10 +224,16 @@ int main()
 
     deleteBoard(board, size);
 
+    // Keep the window open so the result stays visible when run by double-click.
+    cout << endl << "Press Enter to exit...";
+    cin.ignore(1000, '\n');
+    cin.get();
+
     return 0;
 }
 
 
+// Prompts for the board size and re-asks until it is within MIN_SIZE..MAX_SIZE.
 int getBoardSize()
 {
     int size;
@@ -245,11 +253,12 @@ int getBoardSize()
     return size;
 }
 
-// Replaced with your updated function
+// Validates a coordinate (letter then digit, both in range) and checks the square
+// holds one of the current player's pieces.
 bool validateInput(char input[3], int size, int player, char** board)
 {
-    int colLetter = input[0] - 'A'; // Use ASCII to do 0 = 48
-    int rowNumber = input[1] - '0' - 1;
+    int colLetter = input[0] - 'A';     // 'A' maps to column 0
+    int rowNumber = input[1] - '0' - 1; // '1' maps to row 0
     if (isalpha(input[0]) and isdigit(input[1]))
     {
         if (rowNumber < size and rowNumber >= 0 and colLetter < size and colLetter >= 0)
@@ -262,6 +271,7 @@ bool validateInput(char input[3], int size, int player, char** board)
     return false;
 }
 
+// Confirms the square holds a piece (normal or powered) owned by the current player.
 bool validatePiece(int column, int row, int player, char** board)
 {
     char current = board[row][column];
@@ -292,6 +302,7 @@ bool validatePiece(int column, int row, int player, char** board)
     return false;
 }
 
+// When a normal piece reaches the opponent's back row, lets the player choose a power.
 void checkAndAssignPower(char** board, int row, int col, int player, int size)
 {
     int enemyRow = (player == 1) ? (size - 1) : 0;
@@ -332,21 +343,19 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size)
     }
 }
 
-// Function to handle movement choices for pieces
+// Lists the legal targets for the piece at input and stores them in targets.
+// capturesOnly restricts the list to jumps only (used for Juggernaut chaining).
 bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount, bool capturesOnly)
 {
     targetCount = 0;
     int col = input[0] - 'A';
     int row = input[1] - '0' - 1;
-    // Determines if the piece moves up or down depending on the current player on the turn
+    // Player 1 moves down the board, Player 2 moves up.
     int drow;
-    if(player==1){
-    drow=1;
-    }
+    if (player == 1)
+        drow = 1;
     else
-    {
-    drow=-1;
-    }
+        drow = -1;
 
     // Phantom moves through its own team's pieces (phases over friendlies).
     char piece = board[row][col];
@@ -485,6 +494,8 @@ char** createBoard(int size)
     return board;
 }
 
+// Fills the board: X (Player 1) on the top rows, O (Player 2) on the bottom rows,
+// placed only on dark squares where (row + col) is odd.
 void initBoard(char** board, int size)
 {
     int pieceRows = (size / 2) - 1;
@@ -514,6 +525,7 @@ void initBoard(char** board, int size)
     }
 }
 
+// Draws the board with column letters, row numbers, and grid lines.
 void displayBoard(char** board, int size)
 {
     cout << "   ";
@@ -544,6 +556,7 @@ void displayBoard(char** board, int size)
     cout << "+" << endl;
 }
 
+// Frees every row then the row-pointer array.
 void deleteBoard(char** board, int size)
 {
     for (int i = 0; i < size; i++)

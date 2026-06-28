@@ -35,6 +35,8 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size);
 void saveGame(char** board, int size, int currentTurn);
 char** loadGame(int& size, int& currentTurn, bool& continueChosen);
 bool winningCondition(char** board, int size);
+bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount);
+void movePiece(char input[3], int targetRow, int targetCol, int player, char** board);
 
 int main()
 {
@@ -82,7 +84,7 @@ int main()
         {
             currentTurn = 1;
         }
-        
+
         bool validInput = false;
         cout << "Player " << currentTurn << ", please select a piece by typing column then row. E.g A1" << endl;
         cin >> pos;
@@ -95,19 +97,69 @@ int main()
             validInput = validateInput(pos, size, currentTurn, board);
         }
         cout << "selected piece at " << pos << endl;
-        
+
         // Updated to match the new naming convention from your snippet
         int colLetter = pos[0] - 'A';
         int rowNumber = pos[1] - '0' - 1;
-        
+
         // Passed rowNumber first, then colLetter, to match board[row][col] mapping
         checkAndAssignPower(board, rowNumber, colLetter, currentTurn, size);
         displayBoard(board, size);
+        int targets[2][2];
+        int targetCount = 0;
+        bool hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+        // If the selected piece has no valid moves, allow the player to choose another piece until a pice with valid moves is selected
+        while (!hasMove) {
+            cout << "Player " << currentTurn << ", " << "please select a piece by typing row then column. E.g A1" << endl;
+            cin >> pos;
+            validInput = validateInput(pos, size, currentTurn, board);
+
+            while (validInput == false)
+            {
+                cout << "Invalid input, please select a piece by typing row then column. E.g A1" << endl;
+                cin >> pos;
+                validInput = validateInput(pos, size, currentTurn, board);
+            }
+            cout << "selected piece at "<< pos << endl;
+                hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+            }
+
+
+        while (hasMove) {
+            cout << "Please type the target position (e.g. B3): ";
+            char choice[3];
+            cin >> choice;
+
+            // Temporarily stores the targetted position's row and column
+            int tcol = choice[0] - 'A';
+            int trow = choice[1] - '0' - 1;
+            int chosenRow = -1;
+            int chosenCol = -1;
+            // Checks the array targets if the targetted position matches the row and column stored
+            for (int i = 0; i < targetCount; ++i) {
+                if (targets[i][0] == trow && targets[i][1] == tcol) {
+                    chosenRow = trow;
+                    chosenCol = tcol;
+                    break;
+                }
+            }
+            // If the chosen position matches with targets available, moves the pieces and restarts the loop after displaying board
+            if (chosenRow != -1) {
+                movePiece(pos, chosenRow, chosenCol, currentTurn, board);
+                displayBoard(board, size);
+                hasMove = false; // Exit the loop after a successful move
+            }
+            // If the chosen position does not match with targets available, and lets the player to choose again
+            else {
+                cout << "Invalid choice or square not available." << endl;
+            }
+        }
     }
 
-    deleteBoard(board, size);
-    return 0;
-}
+        deleteBoard(board, size);
+
+    }
+
 
 int getBoardSize()
 {
@@ -188,7 +240,7 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size)
         cout << "2. The Juggernaut (J)" << endl;
         cout << "3. The Necromancer (N)" << endl;
         cout << "Enter your choice (1-3): ";
-        
+
         int choice;
         cin >> choice;
         while (cin.fail() || choice < 1 || choice > 3)
@@ -205,7 +257,7 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size)
             else if (choice == 2) board[row][col] = 'J';
             else if (choice == 3) board[row][col] = 'N';
         }
-        else 
+        else
         {
             if (choice == 1) board[row][col] = 'p';
             else if (choice == 2) board[row][col] = 'j';
@@ -215,6 +267,70 @@ void checkAndAssignPower(char** board, int row, int col, int player, int size)
     }
 }
 
+// Function to handle movement choices for pieces
+bool movementchoices(char input[3], int player, char** board, int size, int targets[2][2], int &targetCount)
+{
+    targetCount = 0;
+    int col = input[0] - 'A';
+    int row = input[1] - '0' - 1;
+    // Determines if the piece moves up or down depending on the current player on the turn
+    int drow;
+    if(player==1){
+    drow=1;
+    }
+    else
+    {
+    drow=-1;
+    }
+
+    // Calculates targettable position on the left of the piece
+    int t1r = row + drow;
+    int t1c = col - 1;
+    // Calculates targettable position on the right of the piece
+    int t2r = row + drow;
+    int t2c = col + 1;
+
+    cout << "You may move this piece to the following positions:" << endl;
+
+    // Checks if targettable positions are actually playable '.'
+    if (t1r >= 0 && t1r < size && t1c >= 0 && t1c < size && board[t1r][t1c] == '.') {
+        cout << static_cast<char>('A' + t1c) << (t1r + 1) << endl;
+        targets[targetCount][0] = t1r;
+        targets[targetCount][1] = t1c;
+        targetCount++;
+    }
+
+    if (t2r >= 0 && t2r < size && t2c >= 0 && t2c < size && board[t2r][t2c] == '.') {
+        cout << static_cast<char>('A' + t2c) << (t2r + 1) << endl;
+        targets[targetCount][0] = t2r;
+        targets[targetCount][1] = t2c;
+        targetCount++;
+    }
+
+    if (targetCount == 0) {
+        cout << "(It seems there are no legal moves with this piece)" << endl;
+    }
+
+    return targetCount > 0;
+}
+
+// Function to handle actual movement of a piece
+void movePiece(char input[3], int targetRow, int targetCol, int player, char** board)
+{
+    int fromCol = input[0] - 'A';
+    int fromRow = input[1] - '0' - 1;
+
+    if (targetRow < 0 || targetCol < 0) {
+        cout << "No move chosen." << endl;
+        return;
+    }
+
+    board[targetRow][targetCol] = board[fromRow][fromCol];
+    board[fromRow][fromCol] = '.';
+    cout << "Moved piece to " << static_cast<char>('A' + targetCol) << (targetRow + 1) << endl;
+}
+
+// Dynamically allocates a 2D char array using pointers.
 char** createBoard(int size)
 {
     char** board = new char*[size];
@@ -233,7 +349,7 @@ void initBoard(char** board, int size)
     {
         for (int col = 0; col < size; col++)
         {
-            if ((row + col) % 2 == 1) 
+            if ((row + col) % 2 == 1)
             {
                 if (row < pieceRows)
                 {
@@ -248,7 +364,7 @@ void initBoard(char** board, int size)
             }
             else
             {
-                board[row][col] = ' '; 
+                board[row][col] = ' ';
             }
         }
     }

@@ -184,11 +184,14 @@ int main()
                     hasMove = false;
                 }
 
-                // Turn over: offer promotion on the final landing square.
+                // Turn over: offer promotion. The board was already shown right
+                // after the move, so redraw only if promotion changed the piece.
                 if (!hasMove)
                 {
+                    char before = board[chosenRow][chosenCol];
                     checkAndAssignPower(board, chosenRow, chosenCol, currentTurn, size);
-                    displayBoard(board, size);
+                    if (board[chosenRow][chosenCol] != before)
+                        displayBoard(board, size);
                 }
             }
             // Otherwise the target was not a listed option; let the player retry.

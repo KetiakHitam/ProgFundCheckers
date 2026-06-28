@@ -82,8 +82,23 @@ int main()
         int targets[2][2];
         int targetCount = 0;
         bool hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+        if (!hasMove) {
+            cout << "Player " << currentTurn << ", " << "please select a piece by typing row then column. E.g A1" << endl;
+            cin >> pos;
+            validInput = validateInput(pos, size, currentTurn, board);
 
-        if (hasMove) {
+            while (validInput == false)
+            {
+                cout << "Invalid input, please select a piece by typing row then column. E.g A1" << endl;
+                cin >> pos;
+                validInput = validateInput(pos, size, currentTurn, board);
+            }
+            cout << "selected piece at "<< pos << endl;
+                hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
+            }
+
+
+        while (hasMove) {
             cout << "Please type the target position (e.g. B3): ";
             char choice[3];
             cin >> choice;
@@ -103,11 +118,11 @@ int main()
             if (chosenRow != -1) {
                 movePiece(pos, chosenRow, chosenCol, currentTurn, board);
                 displayBoard(board, size);
-            } else {
+                hasMove = false; // Exit the loop after a successful move
+            } 
+            else {
                 cout << "Invalid choice or square not available." << endl;
             }
-        } else {
-            cout << "No available moves for that piece." << endl;
         }
 
     }
@@ -191,15 +206,26 @@ bool movementchoices(char input[3], int player, char** board, int size, int targ
     targetCount = 0;
     int col = input[0] - 'A';
     int row = input[1] - '0' - 1;
-    int drow = (player == 1) ? 1 : -1;
+    // Determines if the piece moves up or down depending on the current player on the turn
+    int drow;
+    if(player==1){
+    drow=1;
+    }
+    else
+    {
+    drow=-1;
+    }
 
+    // Calculates targettable position on the left of the piece
     int t1r = row + drow;
     int t1c = col - 1;
+    // Calculates targettable position on the right of the piece
     int t2r = row + drow;
     int t2c = col + 1;
 
     cout << "You may move this piece to the following positions:" << endl;
 
+    // Checks if targettable positions are actually playable '.'
     if (t1r >= 0 && t1r < size && t1c >= 0 && t1c < size && board[t1r][t1c] == '.') {
         cout << static_cast<char>('A' + t1c) << (t1r + 1) << endl;
         targets[targetCount][0] = t1r;
@@ -215,7 +241,7 @@ bool movementchoices(char input[3], int player, char** board, int size, int targ
     }
 
     if (targetCount == 0) {
-        cout << "(no legal simple moves)" << endl;
+        cout << "(It seems there are no legal moves with this piece)" << endl;
     }
 
     return targetCount > 0;

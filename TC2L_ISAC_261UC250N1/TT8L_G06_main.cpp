@@ -83,7 +83,7 @@ int main()
         int targetCount = 0;
         bool hasMove = movementchoices(pos, currentTurn, board, size, targets, targetCount);
         // If the selected piece has no valid moves, allow the player to choose another piece until a pice with valid moves is selected
-        if (!hasMove) {
+        while (!hasMove) {
             cout << "Player " << currentTurn << ", " << "please select a piece by typing row then column. E.g A1" << endl;
             cin >> pos;
             validInput = validateInput(pos, size, currentTurn, board);
